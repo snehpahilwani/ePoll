@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.epoll.epoll.VoteActivity">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+<RadioGroup
+    android:id="@+id/radio_group"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerHorizontal="true">
+        <RadioButton
+            android:id="@+id/radioButton"
+            android:layout_width="276dp"
+            android:layout_height="39dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignStart="@+id/radioButton2"
+            android:layout_marginTop="71dp"
+            android:text="Donald Duck" />
+
+        <RadioButton
+            android:id="@+id/radioButton2"
+            android:layout_width="276dp"
+            android:layout_height="39dp"
+            android:layout_below="@+id/radioButton"
+
+            android:layout_marginTop="45dp"
+            android:text="Clinton" />
+</RadioGroup>
+        <Button
+            android:id="@+id/button_blind"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/radio_group"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="52dp"
+            android:text="BLIND MESSAGE" />
+
+    </RelativeLayout>
+
+</android.support.constraint.ConstraintLayout>
