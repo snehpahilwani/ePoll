@@ -38,16 +38,14 @@ import java.util.Map;
 public class SignMessageActivity extends AppCompatActivity {
 
     BigInteger m,r;
-    final RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radio_group);
+    RadioGroup radioGroup;
 
     final String webLink = "http://ec2-35-174-137-131.compute-1.amazonaws.com:8000";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vote);
-
-//        RadioButton mButton1 = (RadioButton)findViewById(R.id.radioButton);
-//        RadioButton mButton2 = (RadioButton)findViewById(R.id.radioButton2);
+        radioGroup = (RadioGroup) findViewById(R.id.radio_group);
         Button mBlindButton = (Button)findViewById(R.id.button_blind);
 
         mBlindButton.setOnClickListener(new View.OnClickListener() {
