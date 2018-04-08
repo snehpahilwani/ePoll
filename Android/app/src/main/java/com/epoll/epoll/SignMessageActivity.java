@@ -99,8 +99,8 @@ public class SignMessageActivity extends AppCompatActivity {
             BigInteger s = r.modInverse(N).multiply(sPrime).mod(N);
             byte[] bytes = new Base64().encode(s.toByteArray());
             String signature = (new String(bytes));
-            Log.i("INFO","Signature produced with Blind RSA procedure for message (hashed with SHA1): " + new String(m.toByteArray()) + " is: ");
-            Log.i("Signature",signature);
+            Log.d("INFO","Signature produced with Blind RSA procedure for message (hashed with SHA1): " + new String(m.toByteArray()) + " is: ");
+            Log.d("Signature",signature);
             return signature;
         }
         catch (Exception e)
@@ -144,7 +144,7 @@ public class SignMessageActivity extends AppCompatActivity {
 
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    // TODO: Handle error
+
                     Log.e("Error", "Response not found!");
                     Toast.makeText(SignMessageActivity.this, "Error, Response not found!", Toast.LENGTH_SHORT).show();
 
@@ -159,11 +159,11 @@ public class SignMessageActivity extends AppCompatActivity {
             String msg = "";
             int flag = 0;
             if (id == R.id.radioButton) {
-                msg = "Trump";
+                msg = "Donald Trump";
                 flag = 1;
                 //Toast.makeText(SignMessageActivity.this, "You voted for Duck", Toast.LENGTH_SHORT).show();
             } else if (id == R.id.radioButton2) {
-                msg = "Clinton";
+                msg = "Hillary Clinton";
                 flag = 1;
                 //Toast.makeText(SignMessageActivity.this, "You voted for Clinton", Toast.LENGTH_SHORT).show();
             }
@@ -229,51 +229,7 @@ public class SignMessageActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(URL... urls) {
             JSONObject jsonObject = new JSONObject();
-            RequestQueue queue = Volley.newRequestQueue(getApplicationContext());
-
-            try {
-                jsonObject.put("mPrime", mPrime.toString());
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, urls[0].toString(), jsonObject, new Response.Listener<JSONObject>() {
-
-                @Override
-                public void onResponse(JSONObject response) {
-
-                    try {
-                        sPrime = response.getString("sign");
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    Log.i("Response", "Response: " + response.toString());
-                }
-            }, new Response.ErrorListener() {
-
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // TODO: Handle error
-                    Log.e("Error", "Response not found!");
-                    Toast.makeText(SignMessageActivity.this, "Error, Response not found!", Toast.LENGTH_SHORT).show();
-
-                }
-
-
-            }){
-
-
-                //Pass Your Parameters here
-                @Override
-                protected Map<String, String> getParams() {
-                    Map<String, String> params = new HashMap<String, String>();
-//                    params.put("User", UserName);
-//                    params.put("Pass", PassWord);
-                    return params;
-                }
-            };
-
-
-            queue.add(jsonObjectRequest);
+            
             String sign = signCalculation(new BigInteger(sPrime), nValue);
             return sign;
         }

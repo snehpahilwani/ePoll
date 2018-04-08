@@ -136,7 +136,7 @@ public class SignUpActivity extends AppCompatActivity {
                 jsonObject1.put("password", mPassStr);
                 editor.putString(getString(R.string.loginpass), jsonObject1.toString());
                 editor.commit();
-                sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
+                //sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
                 Log.d("After setting", sharedPref.getString(getString(R.string.loginpass), "ANDROID"));
                 Log.d("OK", "OK");
 
