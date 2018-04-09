@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.PersistableBundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
@@ -77,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
 
         Button mSignInBtn = (Button) findViewById(R.id.btn_sign_in);
         Button mSignUpBtn = (Button) findViewById(R.id.btn_signup);
-        Button mVoteBtn = (Button) findViewById(R.id.btn_anon_vote);
+        final Button mVoteBtn = (Button) findViewById(R.id.btn_anon_vote);
         Button mVerifyVoteBtn = (Button) findViewById(R.id.btn_anon_verify);
         final String webLink = "http://ec2-35-174-137-131.compute-1.amazonaws.com:8000/api";
 
@@ -103,8 +104,118 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        mVoteBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                JSONObject candidateSignJSON = null;
+                Context context = getApplicationContext();
+                String candidateString = null, signString = null;
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                //String candidateSignJSONStr = preferences.getString(getString(R.string.candidate), "DEFAULT");
+                candidateString = preferences.getString(getString(R.string.candidate), "DEFAULT");
+                signString = preferences.getString(getString(R.string.sign), "DEFAULT");
+              //  SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                //String userPassJson = preferences.getString(getString(R.string.candidate), "DEFAULT");
+
+                Log.d("candidateString", candidateString);
+                Log.d("signString", signString);
+
+                //TODO put negative case check
+                new VoteTask().execute(candidateString, signString);
+                preferences.edit().clear().commit();
+                mVoteBtn.setVisibility(View.INVISIBLE);
+
+            }
+        });
+
 
     }
+
+
+    public class VoteTask extends AsyncTask<String, Integer, String>{
+        AlertDialog dialog;
+        int flag = 0;
+        @Override
+        protected String doInBackground(String... strings) {
+            String candidate = strings[0];
+            String sign = strings[1];
+            String endPoint = "vote/";
+            JSONObject voteObject = new JSONObject();
+
+            try {
+                voteObject.put("message", candidate);
+                voteObject.put("signature", sign);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+
+            OkHttpClient client = new OkHttpClient();
+            okhttp3.Request.Builder builder = new okhttp3.Request.Builder();
+            RequestBody body = RequestBody.create(JSON, voteObject.toString());
+            builder.url(webLink + endPoint);
+            builder.post(body);
+            //builder.addHeader("Authorization", Credentials.basic(username, password));
+            okhttp3.Request request = builder.build();
+
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                String responseString = response.body().string();
+                //Toast.makeText(SignUpActivity.this, "Done", Toast.LENGTH_SHORT).show();
+                if(response.code() == 200){
+                    //Toast.makeText(LoginActivity.this, "Your vote has been cast!", Toast.LENGTH_SHORT).show();
+                    flag  = 1;
+                    Log.d("Vote cast!", Integer.toString(response.code()));
+                    return responseString;
+                    //TODO remove from preferences, signature
+
+                }else{
+                    Log.e("Vote not cast", "Could not vote. Code: " + response.code() + " " + responseString);
+                 //   flag = 2;
+                }
+
+            }catch (IOException e){
+                e.printStackTrace();
+               // flag = 1;
+                Log.e("Response not recd", "No response");
+
+                //Toast.makeText(SignUpActivity.this, "ERROR: IOException", Toast.LENGTH_SHORT).show();
+            }
+
+
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            dialog = new AlertDialog.Builder(LoginActivity.this).create();
+            if(flag == 1){
+
+            dialog.setTitle("Vote cast!");
+            dialog.setMessage("Congratulations! Your vote has been cast! Thank you.");
+            dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialog.dismiss();
+                }
+            });
+            dialog.show();}
+            else{
+                dialog.setTitle("Error in vote casting!");
+                dialog.setMessage("Sorry! Your vote could not be cast! Try signing your vote first.");
+                dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialog.dismiss();
+                    }
+                });
+            }
+        }
+    }
+
+
 
     public class SignInCheckTask extends AsyncTask<String, Integer, String>{
         int flag = 1;
@@ -117,26 +228,19 @@ public class LoginActivity extends AppCompatActivity {
             password = strings[1];
             Log.d("username", username);
             Log.d("password", password);
-            OkHttpClient client = new OkHttpClient();
+
             try {
                 jsonObject.put("username", username);
                 jsonObject.put("password", password);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            OkHttpClient client = new OkHttpClient();
             okhttp3.Request.Builder builder = new okhttp3.Request.Builder();
             RequestBody body = RequestBody.create(JSON, jsonObject.toString());
             builder.url(webLink + endPoint);
             builder.addHeader("Authorization", Credentials.basic(username, password));
             okhttp3.Request request = builder.build();
-
-//            OkHttpClient httpClient = new OkHttpClient.Builder().authenticator(new Authenticator() {
-//                public Request authenticate(Route route, Response response) throws IOException {
-//                    String credential = Credentials.basic(username, password);
-//                    return response.request().newBuilder().header("Authorization", credential).build();
-//                }
-//            }).build();
-
 
             try {
                 okhttp3.Response response = client.newCall(request).execute();
@@ -168,14 +272,13 @@ public class LoginActivity extends AppCompatActivity {
 
             if(flag == 1) {
                 Context context = getApplicationContext();
-                SharedPreferences sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPref.edit();
-                //JSONObject jsonObject1 = new JSONObject();
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                SharedPreferences.Editor editor = preferences.edit();
                 try {
                     editor.putString(getString(R.string.loginpass), jsonObject.toString());
                     editor.commit();
                     //sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
-                    Log.d("After setting", sharedPref.getString(getString(R.string.loginpass), "ANDROID"));
+                    Log.d("After setting", preferences.getString(getString(R.string.loginpass), "ANDROID"));
                     Log.d("OK", "OK");
                     Intent intent = new Intent(LoginActivity.this, SignMessageActivity.class);
                     startActivity(intent);

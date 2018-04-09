@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
@@ -128,8 +129,9 @@ public class SignUpActivity extends AppCompatActivity {
 
         if(flag == 1) {
             Context context = getApplicationContext();
-            SharedPreferences sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
+            SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+            SharedPreferences.Editor editor = preferences.edit();
+
             JSONObject jsonObject1 = new JSONObject();
             try {
                 jsonObject1.put("userName", mEmailStr);
@@ -137,7 +139,7 @@ public class SignUpActivity extends AppCompatActivity {
                 editor.putString(getString(R.string.loginpass), jsonObject1.toString());
                 editor.commit();
                 //sharedPref = context.getSharedPreferences(getString(R.string.loginpass), Context.MODE_PRIVATE);
-                Log.d("After setting", sharedPref.getString(getString(R.string.loginpass), "ANDROID"));
+                Log.d("After setting", preferences.getString(getString(R.string.loginpass), "ANDROID"));
                 Log.d("OK", "OK");
 
                 dialog = new AlertDialog.Builder(SignUpActivity.this).create();
