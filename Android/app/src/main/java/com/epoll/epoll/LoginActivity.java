@@ -1,66 +1,45 @@
 package com.epoll.epoll;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.app.LoaderManager.LoaderCallbacks;
-
-import android.content.CursorLoader;
-import android.content.Loader;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 
-import android.os.Build;
+
 import android.os.Bundle;
-import android.provider.ContactsContract;
+
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.KeyEvent;
+
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.IOException;
-
-import okhttp3.Authenticator;
 import okhttp3.Credentials;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
-import okhttp3.Route;
 
-import static android.Manifest.permission.READ_CONTACTS;
+
 
 /**
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity {
     final String webLink = "http://ec2-35-174-137-131.compute-1.amazonaws.com:8000/api/";
+    Button mVoteBtn;
     JSONObject jsonObject = new JSONObject();
     final MediaType JSON
             = MediaType.parse("application/json; charset=utf-8");
@@ -78,8 +57,9 @@ public class LoginActivity extends AppCompatActivity {
 
         Button mSignInBtn = (Button) findViewById(R.id.btn_sign_in);
         Button mSignUpBtn = (Button) findViewById(R.id.btn_signup);
-        final Button mVoteBtn = (Button) findViewById(R.id.btn_anon_vote);
+        mVoteBtn = (Button) findViewById(R.id.btn_anon_vote);
         Button mVerifyVoteBtn = (Button) findViewById(R.id.btn_anon_verify);
+        Button mViewResultBtn = findViewById(R.id.btn_view_results);
         final String webLink = "http://ec2-35-174-137-131.compute-1.amazonaws.com:8000/api";
 
 
@@ -109,7 +89,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onClick(View view) {
                 JSONObject candidateSignJSON = null;
                 Context context = getApplicationContext();
-                String candidateString = null, signString = null;
+                String candidateString, signString;
                 SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
                 //String candidateSignJSONStr = preferences.getString(getString(R.string.candidate), "DEFAULT");
                 candidateString = preferences.getString(getString(R.string.candidate), "DEFAULT");
@@ -120,17 +100,88 @@ public class LoginActivity extends AppCompatActivity {
                 Log.d("candidateString", candidateString);
                 Log.d("signString", signString);
 
-                //TODO put negative case check
-                new VoteTask().execute(candidateString, signString);
-                preferences.edit().clear().commit();
-                mVoteBtn.setVisibility(View.INVISIBLE);
+                if(candidateString.equals("DEFAULT") || signString.equals("DEFAULT")){
+                    Toast.makeText(LoginActivity.this, "Could not vote. Try signing vote before casting it.", Toast.LENGTH_LONG).show();
+                }else{
+                new VoteTask().execute(candidateString, signString);}
+            }
+        });
 
+        mVerifyVoteBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                Toast.makeText(LoginActivity.this, "Your transaction ID: " + preferences.getString(getString(R.string.txnID), "DEFAULT"),
+                        Toast.LENGTH_LONG).show();
             }
         });
 
 
+        mViewResultBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new ResultTask().execute();
+            }
+        });
+
     }
 
+    public class ResultTask extends AsyncTask<Void, Integer, String>{
+        int flag = 0;
+        @Override
+        protected String doInBackground(Void... voids) {
+            String endPoint = "results/";
+            OkHttpClient client = new OkHttpClient();
+            okhttp3.Request.Builder builder = new okhttp3.Request.Builder();
+            //RequestBody body = RequestBody.create(JSON, voteObject.toString());
+            builder.url(webLink + endPoint);
+            okhttp3.Request request = builder.build();
+
+            try {
+                okhttp3.Response response = client.newCall(request).execute();
+                String responseString = response.body().string();
+
+                if(response.code() == 200){
+                    Log.d("Results received", Integer.toString(response.code()));
+
+                    //Log.d("Transaction String", responseString);
+                    flag= 1;
+                    return responseString;
+
+
+                }else{
+                    Log.e("Res not recd", "Results not received. Code: " + response.code() + " " + responseString);
+                }
+
+            }catch (IOException e){
+                e.printStackTrace();
+                Log.e("Response not recd", "No response");
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+            String dtCount = null, hcCount = null;
+            if(flag == 1){
+            try {
+                JSONObject jsonObject = new JSONObject(s);
+                dtCount = jsonObject.getString("dt_count");
+                hcCount = jsonObject.getString("hc_count");
+                jsonObject.getString("hc_count");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            Toast.makeText(LoginActivity.this, "Donald Trump: " + dtCount + " Hillary Clinton: "  + hcCount, Toast.LENGTH_LONG).show();
+        }else{
+                Toast.makeText(LoginActivity.this, "Try again.", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
 
     public class VoteTask extends AsyncTask<String, Integer, String>{
         AlertDialog dialog;
@@ -166,17 +217,21 @@ public class LoginActivity extends AppCompatActivity {
                     //Toast.makeText(LoginActivity.this, "Your vote has been cast!", Toast.LENGTH_SHORT).show();
                     flag  = 1;
                     Log.d("Vote cast!", Integer.toString(response.code()));
+
+                    Log.d("Transaction String", responseString);
                     return responseString;
-                    //TODO remove from preferences, signature
+
 
                 }else{
                     Log.e("Vote not cast", "Could not vote. Code: " + response.code() + " " + responseString);
+
                  //   flag = 2;
                 }
 
             }catch (IOException e){
                 e.printStackTrace();
                // flag = 1;
+
                 Log.e("Response not recd", "No response");
 
                 //Toast.makeText(SignUpActivity.this, "ERROR: IOException", Toast.LENGTH_SHORT).show();
@@ -188,17 +243,29 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(final String s) {
             super.onPostExecute(s);
             dialog = new AlertDialog.Builder(LoginActivity.this).create();
             if(flag == 1){
 
             dialog.setTitle("Vote cast!");
-            dialog.setMessage("Congratulations! Your vote has been cast! Thank you.");
+            dialog.setMessage("Congratulations! Your vote has been cast! Your transaction ID is \n" + s);
             dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     dialog.dismiss();
+                    SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    preferences.edit().clear().commit();
+                   // SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putString(getString(R.string.txnID),s);
+
+                    editor.commit();
+                    Log.d("After removing, TXID:",preferences.getString(getString(R.string.txnID), "DEFAULT"));
+                    //Log.d("Unblinded sign",preferences.getString(getString(R.string.sign), "ANDROID"));
+                    mVoteBtn.setVisibility(View.INVISIBLE);
+
+
                 }
             });
             dialog.show();}

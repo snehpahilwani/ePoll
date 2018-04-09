@@ -134,7 +134,7 @@ public class SignUpActivity extends AppCompatActivity {
 
             JSONObject jsonObject1 = new JSONObject();
             try {
-                jsonObject1.put("userName", mEmailStr);
+                jsonObject1.put("username", mEmailStr);
                 jsonObject1.put("password", mPassStr);
                 editor.putString(getString(R.string.loginpass), jsonObject1.toString());
                 editor.commit();

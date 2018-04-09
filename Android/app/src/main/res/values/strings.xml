@@ -6,6 +6,7 @@
     <string name="prompt_password">Password</string>
     <string name="action_sign_in">Sign in or register</string>
     <string name="sign">SignPreference</string>
+    <string name="txnID">TransactionID</string>
     <string name="loginpass">LoginPass</string>
     <string name="candidate">Candidate</string>
     <string name="action_sign_in_short">Sign in</string>
